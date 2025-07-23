@@ -2,6 +2,10 @@
 
 A modern, interactive machine learning analysis tool built with Streamlit that provides automated feature engineering, model comparison, and AI-powered insights.
 
+## 🚀 Live Demo
+
+Try it instantly: [https://subhammoda-ml-analysis-tool.streamlit.app/](https://subhammoda-ml-analysis-tool.streamlit.app/)
+
 ## 📁 Project Structure
 
 ```
