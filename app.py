@@ -93,10 +93,9 @@ def main():
         st.session_state.analysis_completed = False
         
     # Main content
-    tab1, tab2, tab3, tab4 = st.tabs(["📁 Upload Data", "🔧 Analysis", "📈 Results", "🤖 AI Insights"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📁 Upload Data", "🧪 Analysis", "📈 Results", "🤖 AI Insights"])
     
     with tab1:
-
         col_quick1, col_or, col_quick2 = st.columns([1, 0.1, 1])
     
         with col_quick1:
@@ -189,9 +188,6 @@ def main():
                     st.metric("Columns", data_info['shape'][1])
                 with col3:
                     st.metric("Memory Usage", f"{data_info.get('memory_usage_mb', 0):.2f} MB")
-                st.subheader("📋 Sample Data")
-                sample_df = pd.DataFrame(data_info['sample_data'])
-                st.dataframe(sample_df, use_container_width=True)
                 quality_report = st.session_state.data_processor.get_data_quality_report()
                 st.session_state.data_quality_report = quality_report
                 st.subheader("📊 Data Quality Report")
@@ -222,6 +218,7 @@ def main():
                 # Process the file
                 st.session_state.data_processor = DataProcessor(tmp_file_path)
                 st.session_state.current_file = tmp_file_path
+                
                 # Display data info
                 data_info = st.session_state.data_processor.get_data_info()
                 col1, col2, col3 = st.columns(3)
@@ -231,11 +228,6 @@ def main():
                     st.metric("Columns", data_info['shape'][1])
                 with col3:
                     st.metric("Memory Usage", f"{data_info.get('memory_usage_mb', 0):.2f} MB")
-                # Show sample data
-                st.subheader("📋 Sample Data")
-                sample_df = pd.DataFrame(data_info['sample_data'])
-                st.dataframe(sample_df, use_container_width=True)
-                # Data quality report
                 quality_report = st.session_state.data_processor.get_data_quality_report()
                 st.session_state.data_quality_report = quality_report
                 
@@ -262,16 +254,16 @@ def main():
                 
             except Exception as e:
                 st.error(f"❌ Error processing file: {str(e)}")
-    
+
     with tab2:
-        st.header("🔧 Configure Analysis")
-        
+        st.header("🧪 Analysis")
         if st.session_state.data_processor is None:
-            st.warning("⚠️ Please upload a dataset first in the 'Upload Data' tab.")
+            st.info("ℹ️ Please upload a dataset first in the 'Upload Data' tab.")
         else:
             data_info = st.session_state.data_processor.get_data_info()
-            
-            # Column drop selection
+            st.subheader("📋 Sample Data")
+            sample_df = pd.DataFrame(data_info['sample_data'])
+            st.dataframe(sample_df, use_container_width=True)
             st.subheader("🗑️ Drop Columns from Model Training")
             drop_options = data_info['columns']
             drop_columns = st.multiselect(
@@ -289,68 +281,10 @@ def main():
                 options=target_options,
                 help="This column will be used as the target variable for your ML models"
             )
-            
-            # Show analysis status
-            if st.session_state.analysis_running:
-                st.info("🔄 Analysis is currently running... Please wait.")
-                
-                # Progress bar
-                progress_bar = st.progress(0)
-                
-                with st.spinner("🔄 Running analysis... This may take a few minutes..."):
-                    try:
-                        # Initialize components
-                        progress_bar.progress(10)
-                        
-                        processor = st.session_state.data_processor
-                        feature_engineer = FeatureEngineer()
-                        model_comparator = ModelComparator()
-                        analyzer = MLAnalyzer(processor, feature_engineer, model_comparator)
-                        
-                        progress_bar.progress(50)
-                        
-                        # Perform analysis
-                        results = analyzer.perform_analysis(target_column, st.session_state.data_quality_report, drop_columns=st.session_state.get('drop_columns', []))
-                        
-                        progress_bar.progress(90)
-                        
-                        if 'error' not in results:
-                            st.session_state.analysis_results = results
-                            st.session_state.analysis_running = False
-                            st.session_state.analysis_completed = True
-                            progress_bar.progress(100)
-                            st.success("✅ Analysis completed successfully!")
-                            st.rerun()
-                        else:
-                            st.session_state.analysis_running = False
-                            st.error(f"❌ Analysis failed: {results['error']}")
-                            
-                    except Exception as e:
-                        st.session_state.analysis_running = False
-                        st.error(f"❌ Error during analysis: {str(e)}")
-            
-            elif st.session_state.analysis_completed:
-                st.success("✅ Analysis completed successfully!")
-                st.info("📈 Check the 'Results' tab to view your analysis results.")
-                
-                # Reset completion state
-                st.session_state.analysis_completed = False
-            
-            else:
-                # Show start analysis button
-                if st.button("🚀 Start Analysis", type="primary"):
-                    if target_column:
-                        # Set analysis running state
-                        st.session_state.analysis_running = True
-                        st.session_state.analysis_completed = False
-                        st.success("✅ Analysis started! Please switch to the 'Analysis' tab to monitor progress.")
-                        st.rerun()
-                    else:
-                        st.warning("⚠️ Please select a target column.")
-    
+            st.session_state['target_column'] = target_column
+
     with tab3:
-        st.header("📈 Analysis Results")
-        
+        st.header("📈 Results")
         if st.session_state.analysis_results is None:
             st.info("ℹ️ No analysis results available. Please run an analysis first.")
         else:
@@ -497,7 +431,7 @@ def main():
                             method_counts = scaling_df['Method'].value_counts()
                             st.info(f"📈 Scaling Summary: {', '.join([f'{method}: {count}' for method, count in method_counts.items()])}")
             
-    with tab4:
+    with tab3:
         st.header("🤖 AI-Powered Insights")
         
         if st.session_state.analysis_results is None:
